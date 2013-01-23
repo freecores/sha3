@@ -23,12 +23,12 @@
 `define high_pos(w,b)     (`low_pos(w,b) + 7)
 `define high_pos2(w,b)    (`low_pos2(w,b) + 7)
 
-module keccak(clk, reset, in, in_ready, is_last, byte_num, ack, out, out_ready);
+module keccak(clk, reset, in, in_ready, is_last, byte_num, buffer_full, out, out_ready);
     input              clk, reset;
     input      [63:0]  in;
     input              in_ready, is_last;
     input      [2:0]   byte_num;
-    output             ack;       /* to "user" module */
+    output             buffer_full; /* to "user" module */
     output     [511:0] out;
     output reg         out_ready;
 
@@ -75,7 +75,7 @@ module keccak(clk, reset, in, in_ready, is_last, byte_num, ack, out, out_ready);
         out_ready <= 1;
 
     padder
-      padder_ (clk, reset, in, in_ready, is_last, byte_num, ack, padder_out, padder_out_ready, f_ack);
+      padder_ (clk, reset, in, in_ready, is_last, byte_num, buffer_full, padder_out, padder_out_ready, f_ack);
 
     f_permutation
       f_permutation_ (clk, reset, padder_out, padder_out_ready, f_ack, f_out, f_out_ready);

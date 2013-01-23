@@ -18,31 +18,29 @@
 /* if "in_ready" == 0, then "is_last" should be 0. */
 /* the user switch to next "in" only if "ack" == 1. */
 
-module padder(clk, reset, in, in_ready, is_last, byte_num, ack, out, out_ready, f_ack);
+module padder(clk, reset, in, in_ready, is_last, byte_num, buffer_full, out, out_ready, f_ack);
     input              clk, reset;
     input      [63:0]  in;
     input              in_ready, is_last;
     input      [2:0]   byte_num;
-    output             ack;       /* to "user" module */
-    output reg [575:0] out;       /* to "f_permutation" module */
-    output             out_ready; /* to "f_permutation" module */
-    input              f_ack;     /* from "f_permutation" module */
+    output             buffer_full; /* to "user" module */
+    output reg [575:0] out;         /* to "f_permutation" module */
+    output             out_ready;   /* to "f_permutation" module */
+    input              f_ack;       /* from "f_permutation" module */
     
-    reg                state;     /* state == 0: user will send more input data
-                                   * state == 1: user will not send any data */
-    reg                done;      /* == 1: out_ready should be 0 */
-    reg        [8:0]   i;         /* length of "out" buffer */
-    wire       [63:0]  v0;        /* output of module "padder1" */
-    reg        [63:0]  v1;        /* to be shifted into register "out" */
-    wire               buffer_full,
-                       accept,    /* accept user input? */
+    reg                state;       /* state == 0: user will send more input data
+                                     * state == 1: user will not send any data */
+    reg                done;        /* == 1: out_ready should be 0 */
+    reg        [8:0]   i;           /* length of "out" buffer */
+    wire       [63:0]  v0;          /* output of module "padder1" */
+    reg        [63:0]  v1;          /* to be shifted into register "out" */
+    wire               accept,      /* accept user input? */
                        update;
     
     assign buffer_full = i[8];
-    assign out_ready = buffer_full & (~ done);
+    assign out_ready = buffer_full;
     assign accept = (~ state) & in_ready & (~ buffer_full); // if state == 1, do not eat input
-    assign ack = accept;
-    assign update = accept | (state & (~ buffer_full));
+    assign update = (accept | (state & (~ buffer_full))) & (~ done); // don't fill buffer if done
 
     always @ (posedge clk)
       if (reset)
@@ -53,10 +51,10 @@ module padder(clk, reset, in, in_ready, is_last, byte_num, ack, out, out_ready, 
     always @ (posedge clk)
       if (reset)
         i <= 0;
-      else if (f_ack)
-        i <= 0;
-      else if (update)
-        i <= {i[7:0], 1'b1};
+      else if (f_ack | update)
+        i <= {i[7:0], 1'b1} & {9{~ f_ack}};
+/*    if (f_ack)  i <= 0; */
+/*    if (update) i <= {i[7:0], 1'b1}; // increase length */
 
     always @ (posedge clk)
       if (reset)

@@ -29,7 +29,7 @@ module test_padder;
     reg f_ack;
 
     // Outputs
-    wire ack;
+    wire buffer_full;
     wire [575:0] out;
     wire out_ready;
 
@@ -44,7 +44,7 @@ module test_padder;
         .in_ready(in_ready),
         .is_last(is_last),
         .byte_num(byte_num),
-        .ack(ack),
+        .buffer_full(buffer_full),
         .out(out),
         .out_ready(out_ready),
         .f_ack(f_ack)
@@ -69,14 +69,13 @@ module test_padder;
         // pad an empty string, should not eat next input
         reset = 1; #(`P); reset = 0;
         #(7*`P); // wait some cycles
+        if (buffer_full !== 0) error;
         in_ready = 1;
         is_last = 1;
         #(`P);
         in_ready = 1; // next input
         is_last = 1;
-        #(`P/2);
-        if (ack === 1) error; // should be 0
-        #(`P/2);
+        #(`P);
         in_ready = 0;
         is_last = 0;
 
@@ -85,20 +84,10 @@ module test_padder;
         check({64'b1, 448'h0, 1'b1, 63'h0});
         f_ack = 1; #(`P); f_ack = 0;
         for(i=0; i<5; i=i+1)
-            if (ack === 1) error; // should be 0
-
-        // pad an empty string
-        reset = 1; #(`P); reset = 0;
-        #(3*`P); // wait some cycles
-        in_ready = 1;
-        is_last = 1;
-        #(`P);
-        in_ready = 0;
-        is_last = 0;
-
-        while (out_ready !== 1)
+          begin
             #(`P);
-        check({64'b1, 448'h0, 1'b1, 63'h0});
+            if (buffer_full !== 0) error; // should be 0
+          end
 
         // pad an (576-8) bit string
         reset = 1; #(`P); reset = 0;
@@ -143,18 +132,16 @@ module test_padder;
         for (i=0; i<9; i=i+1)
           begin
             in = 64'h1234567890ABCDEF;
-            #(`P/2);
-            if (ack !== 1) error;
-            #(`P/2);
+            #(`P);
           end
         if (out_ready !== 1) error;
         check({9{64'h1234567890ABCDEF}});
         #(`P/2);
-        if (ack !== 0) error; // should not eat
+        if (buffer_full !== 1) error; // should not eat
         #(`P/2);
         in = 64'h999; // should not eat this
         #(`P/2);
-        if (ack !== 0) error; // should not eat
+        if (buffer_full !== 1) error; // should not eat
         #(`P/2);
         f_ack = 1; #(`P); f_ack = 0;
         if (out_ready !== 0) error;

@@ -28,7 +28,7 @@ module test_keccak;
     reg [2:0] byte_num;
 
     // Outputs
-    wire ack;
+    wire buffer_full;
     wire [511:0] out;
     wire out_ready;
 
@@ -43,7 +43,7 @@ module test_keccak;
         .in_ready(in_ready),
         .is_last(is_last),
         .byte_num(byte_num),
-        .ack(ack),
+        .buffer_full(buffer_full),
         .out(out),
         .out_ready(out_ready)
     );
@@ -75,7 +75,7 @@ module test_keccak;
         in_ready = 1;
         is_last = 1;
         #(`P/2);
-        if (ack === 1) error; // should be 0
+        if (buffer_full === 1) error; // should be 0
         #(`P/2);
         in_ready = 0;
         is_last = 0;
@@ -84,7 +84,10 @@ module test_keccak;
             #(`P);
         check(512'h12f4a85b68b091e8836219e79dfff7eb9594a42f5566515423b2aa4c67c454de83a62989e44b5303022bfe8c1a9976781b747a596cdab0458e20d8750df6ddfb);
         for(i=0; i<5; i=i+1)
-            if (ack === 1) error; // should be 0
+          begin
+            #(`P);
+            if (buffer_full !== 0) error; // should keep 0
+          end
 
         // hash an empty string, should not eat next input
         reset = 1; #(`P); reset = 0;
@@ -97,9 +100,7 @@ module test_keccak;
         in = 64'hddddd; // should not be eat
         in_ready = 1; // next input
         is_last = 1;
-        #(`P/2);
-        if (ack === 1) error; // should be 0
-        #(`P/2);
+        #(`P);
         in_ready = 0;
         is_last = 0;
 
@@ -107,7 +108,10 @@ module test_keccak;
             #(`P);
         check(512'h0eab42de4c3ceb9235fc91acffe746b29c29a8c366b7c60e4e67c466f36a4304c00fa9caf9d87976ba469bcbe06713b435f091ef2769fb160cdab33d3670680e);
         for(i=0; i<5; i=i+1)
-            if (ack === 1) error; // should be 0
+          begin
+            #(`P);
+            if (buffer_full !== 0) error; // should keep 0
+          end
 
         // hash an (576-8) bit string
         reset = 1; #(`P); reset = 0;
@@ -156,35 +160,27 @@ module test_keccak;
         is_last = 0;
         for (i=0; i<9; i=i+1)
           begin
-            in = 64'h1234567890ABCDEF;
-            #(`P/2);
-            while (ack !== 1) #(`P); // wait
-            #(`P/2);
+            in = 64'h1234567890ABCDEF; #(`P);
           end
         #(`P/2);
-        if (ack !== 0) error; // should not eat
+        if (buffer_full !== 1) error; // should not eat
         #(`P/2);
         in = 64'h999; // should not eat this
         in_ready = 0;
         #(`P/2);
-        if (ack !== 0) error; // should not eat
+        if (buffer_full !== 0) error; // should not eat, but buffer should not be full
         #(`P/2);
         #(`P);
         // feed next (576-16) bit
         in_ready = 1;
         for (i=0; i<8; i=i+1)
           begin
-            in = 64'h1234567890ABCDEF;
-            #(`P/2);
-            while (ack !== 1) #(`P); // wait
-            #(`P/2);
+            in = 64'h1234567890ABCDEF; #(`P);
           end
         byte_num = 6;
         is_last = 1;
         in = 64'h1234567890ABCDEF;
-        #(`P/2);
-        while (ack !== 1) #(`P); // wait
-        #(`P/2);
+        #(`P);
         is_last = 0;
         in_ready = 0;
         while (out_ready !== 1)

@@ -25,24 +25,23 @@ module f_permutation(clk, reset, in, in_ready, ack, out, out_ready);
     output reg          out_ready;
 
     reg        [10:0]   i; /* select round constant */
-    reg        [10:0]   j; /* update register "out" and "out_ready" */
     wire       [1599:0] round_in, round_out;
     wire       [63:0]   rc1, rc2;
     wire                update;
     wire                accept;
+    reg                 calc; /* == 1: calculating rounds */
 
-    assign accept = in_ready & (i == 0);
+    assign accept = in_ready & (~ calc); // in_ready & (i == 0)
     
     always @ (posedge clk)
       if (reset) i <= 0;
       else       i <= {i[9:0], accept};
     
     always @ (posedge clk)
-      if (reset)         j <= 0;
-      else if (in_ready) j <= ~0;
-      else               j <= (j << 1);
-
-    assign update = j[10] | accept;
+      if (reset) calc <= 0;
+      else       calc <= (calc & (~ i[10])) | accept;
+    
+    assign update = calc | accept;
 
     assign ack = accept;
 
