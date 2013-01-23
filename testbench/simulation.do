@@ -1,6 +1,6 @@
 vlib work
-vlog ../rtl/*.v
-vlog *.v
+vlog -lint ../rtl/*.v
+vlog -lint *.v
 vsim -novopt test_keccak
 add wave -noupdate -format Logic -radix unsigned /test_keccak/clk
 add wave -noupdate -format Logic -radix unsigned /test_keccak/reset

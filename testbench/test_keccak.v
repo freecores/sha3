@@ -19,48 +19,48 @@
 
 module test_keccak;
 
-	// Inputs
-	reg clk;
-	reg reset;
-	reg [63:0] in;
-	reg in_ready;
-	reg is_last;
-	reg [2:0] byte_num;
+    // Inputs
+    reg clk;
+    reg reset;
+    reg [63:0] in;
+    reg in_ready;
+    reg is_last;
+    reg [2:0] byte_num;
 
-	// Outputs
-	wire ack;
-	wire [511:0] out;
-	wire out_ready;
+    // Outputs
+    wire ack;
+    wire [511:0] out;
+    wire out_ready;
 
     // Var
     integer i;
 
-	// Instantiate the Unit Under Test (UUT)
-	keccak uut (
-		.clk(clk), 
-		.reset(reset), 
-		.in(in), 
-		.in_ready(in_ready), 
-		.is_last(is_last), 
-		.byte_num(byte_num), 
-		.ack(ack), 
-		.out(out), 
-		.out_ready(out_ready)
-	);
+    // Instantiate the Unit Under Test (UUT)
+    keccak uut (
+        .clk(clk),
+        .reset(reset),
+        .in(in),
+        .in_ready(in_ready),
+        .is_last(is_last),
+        .byte_num(byte_num),
+        .ack(ack),
+        .out(out),
+        .out_ready(out_ready)
+    );
 
-	initial begin
-		// Initialize Inputs
-		clk = 0;
-		reset = 0;
-		in = 0;
-		in_ready = 0;
-		is_last = 0;
-		byte_num = 0;
+    initial begin
+        // Initialize Inputs
+        clk = 0;
+        reset = 0;
+        in = 0;
+        in_ready = 0;
+        is_last = 0;
+        byte_num = 0;
 
-		// Wait 100 ns for global reset to finish
-		#100;
-        
-		// Add stimulus here
+        // Wait 100 ns for global reset to finish
+        #100;
+
+        // Add stimulus here
         @ (negedge clk);
 
         // hash an string "\xA1\xA2\xA3\xA4\xA5", len == 5
@@ -193,7 +193,7 @@ module test_keccak;
 
         $display("Good!");
         $finish;
-	end
+    end
 
     always #(`P/2) clk = ~ clk;
 
