@@ -14,20 +14,24 @@
  * limitations under the License.
  */
 
+/*
+ *     in      byte_num     out
+ * 0x11223344      0    0x01000000
+ * 0x11223344      1    0x11010000
+ * 0x11223344      2    0x11220100
+ * 0x11223344      3    0x11223301
+ */
+
 module padder1(in, byte_num, out);
-    input      [63:0] in;
-    input      [2:0]  byte_num;
-    output reg [63:0] out;
+    input      [31:0] in;
+    input      [1:0]  byte_num;
+    output reg [31:0] out;
     
     always @ (*)
       case (byte_num)
-        0: out = 64'h1;
-        1: out = {56'h1, in[7:0]};
-        2: out = {48'h1, in[15:0]};
-        3: out = {40'h1, in[23:0]};
-        4: out = {32'h1, in[31:0]};
-        5: out = {24'h1, in[39:0]};
-        6: out = {16'h1, in[47:0]};
-        7: out = {8'h1,  in[55:0]};
+        0: out = 32'h1000000;
+        1: out = {in[31:24], 24'h010000};
+        2: out = {in[31:16], 16'h0100};
+        3: out = {in[31:8],   8'h01};
       endcase
 endmodule

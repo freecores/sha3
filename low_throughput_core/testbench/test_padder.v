@@ -22,10 +22,10 @@ module test_padder;
     // Inputs
     reg clk;
     reg reset;
-    reg [63:0] in;
+    reg [31:0] in;
     reg in_ready;
     reg is_last;
-    reg [2:0] byte_num;
+    reg [1:0] byte_num;
     reg f_ack;
 
     // Outputs
@@ -81,7 +81,7 @@ module test_padder;
 
         while (out_ready !== 1)
             #(`P);
-        check({64'b1, 448'h0, 1'b1, 63'h0});
+        check({8'h1, 560'h0, 8'h80});
         f_ack = 1; #(`P); f_ack = 0;
         for(i=0; i<5; i=i+1)
           begin
@@ -92,37 +92,36 @@ module test_padder;
         // pad an (576-8) bit string
         reset = 1; #(`P); reset = 0;
         #(4*`P); // wait some cycles
-        in_ready = 1;
-        byte_num = 7; /* should have no effect */
-        is_last = 0;
+        in_ready = 1; is_last = 0;
+        byte_num = 3; /* should have no effect */
         for (i=0; i<8; i=i+1)
           begin
-            in = 64'h1234567890ABCDEF;
-            #(`P);
+            in = 32'h12345678; #(`P);
+            in = 32'h90ABCDEF; #(`P);
           end
-        is_last = 1;
-        #(`P);
+        in = 32'h12345678; #(`P);
+        in = 32'h90ABCDEF; is_last = 1; #(`P);
         in_ready = 0;
         is_last = 0;
-        check({ {8{64'h1234567890ABCDEF}}, 64'h8134567890ABCDEF });
+        check({ {8{64'h1234567890ABCDEF}}, 64'h1234567890ABCD81 });
 
         // pad an (576-64) bit string
         reset = 1; #(`P); reset = 0;
         // don't wait any cycle
-        in_ready = 1;
-        byte_num = 7; /* should have no effect */
-        is_last = 0;
+        in_ready = 1; is_last = 0;
+        byte_num = 1; /* should have no effect */
         for (i=0; i<8; i=i+1)
           begin
-            in = 64'h1234567890ABCDEF;
-            #(`P);
+            in = 32'h12345678; #(`P);
+            in = 32'h90ABCDEF; #(`P);
           end
         is_last = 1;
         byte_num = 0;
         #(`P);
         in_ready = 0;
         is_last = 0;
-        check({ {8{64'h1234567890ABCDEF}}, 1'b1, 62'b0, 1'b1 });
+        #(`P);
+        check({ {8{64'h1234567890ABCDEF}}, 64'h0100000000000080 });
 
         // pad an (576*2-16) bit string
         reset = 1; #(`P); reset = 0;
@@ -131,8 +130,8 @@ module test_padder;
         is_last = 0;
         for (i=0; i<9; i=i+1)
           begin
-            in = 64'h1234567890ABCDEF;
-            #(`P);
+            in = 32'h12345678; #(`P);
+            in = 32'h90ABCDEF; #(`P);
           end
         if (out_ready !== 1) error;
         check({9{64'h1234567890ABCDEF}});
@@ -148,13 +147,15 @@ module test_padder;
         // feed next (576-16) bit
         for (i=0; i<8; i=i+1)
           begin
-            in = 64'h1234567890ABCDEF; #(`P);
+            in = 32'h12345678; #(`P);
+            in = 32'h90ABCDEF; #(`P);
           end
-        byte_num = 6;
+        in = 32'h12345678; #(`P);
+        byte_num = 2;
         is_last = 1;
-        in = 64'h1234567890ABCDEF; #(`P);
+        in = 32'h90ABCDEF; #(`P);
         if (out_ready !== 1) error;
-        check({ {8{64'h1234567890ABCDEF}}, 64'h8001567890ABCDEF });
+        check({ {8{64'h1234567890ABCDEF}}, 64'h1234567890AB0180 });
         is_last = 0;
         // eat these bits
         f_ack = 1; #(`P); f_ack = 0;
